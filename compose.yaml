@@ -9,40 +9,17 @@
 
 # Lista de serviços
 services:
-  # Não tem influxdb versão 3 nos repositórios do debian 13 (meu servidor),
-  # então vamos usar um container docker.
-  influxdb:
-    # Esta imagem é fornecida pelos desenvolvedores do influxdb.
-    image: influxdb:3-core
-    # Este é o nome do container quando for criado.
-    container_name: influxdb
-    user: "${INFLUXDB_UID}:${INFLUXDB_GID}"
-    # Lista de portas que o container expõe para o host. Pense como se fosse um
-    # firewall, se a porta não estiver aqui, o host não tem acesso.  A porta
-    # 8181 é padrão para o influxdb versão 3.
+  mosquitto:
+    image: "eclipse-mosquitto:2.0.22"
     ports:
-      - 8181:8181
-    # O comando que será executado quando iniciarmos o container. Consulte o manual do
-    # influxdb para entender a sintaxe.
-    command:
-      - influxdb3
-      - serve
-      - --node-id=node0
-      - --object-store=file
-      - --data-dir=/var/lib/influxdb3/data
-      - --plugin-dir=/var/lib/influxdb3/plugins
-      - --admin-token-file=/etc/influxdb3/admin-token.json
-    # Quando desligarmos o container, todos os dados somem.
-    # Aqui mapeamos alguns diretórios do container para diretórios do host
-    # para não perdermos dados.
+      - "127.0.0.1:1883:1883"
     volumes:
       - type: bind
-        source: $INFLUXDB_CONFIG_DIR
-        target: /etc/influxdb3
-        read_only: true
-      - type: bind
-        source: ${INFLUXDB_DATA_DIR}
-        target: /var/lib/influxdb3/data
-      - type: bind
-        source: ${INFLUXDB_PLUGINS_DIR}
-        target: /var/lib/influxdb3/plugins
+        source: ./mosquitto-config/
+        target: /mosquitto/config/
+  mqtt-client:
+    build:
+      context: ./mqtt_client/
+    network_mode: "service:mosquitto"
+    depends_on:
+      - mosquitto
