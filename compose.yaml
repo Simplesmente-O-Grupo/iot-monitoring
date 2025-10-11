@@ -18,6 +18,9 @@ services:
         source: ./mosquitto-config/
         target: /mosquitto/config/
   mqtt-client:
+    environment:
+      MQTT_CLIENT_USER: ${MQTT_CLIENT_USER}
+      MQTT_CLIENT_PASSWORD: ${MQTT_CLIENT_PASSWORD}
     build:
       context: ./mqtt_client/
     network_mode: "service:mosquitto"
