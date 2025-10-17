@@ -19,7 +19,7 @@ Adicione duas contas do mosquitto em um arquivo `m̀osquitto-conf/pass-file` uti
 ```console
 # docker run --rm --user 1883:1883 -ti -v "$PWD"/mosquitto-config:/mosquitto/config eclipse-mosquitto mosquitto_passwd -c /mosquitto/config/pass-file <usuario1>
 
-# docker run --rm --user 1883:1883 -ti -v "$PWD"/mosquitto-config:/mosquitto/config eclipse-mosquitto mosquitto_passwd -c /mosquitto/config/pass-file <usuario2>
+# docker run --rm --user 1883:1883 -ti -v "$PWD"/mosquitto-config:/mosquitto/config eclipse-mosquitto mosquitto_passwd /mosquitto/config/pass-file <usuario2>
 . . .
 ```
 Perceba que somente a primeira camada de `mosquitto_passwd` tem o argumento `-c`. **Quaisquer outras chamadas não podem conter o argumento `-c`, ele sobreescreve o arquivo.**
