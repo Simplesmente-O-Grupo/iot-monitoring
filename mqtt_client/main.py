@@ -34,7 +34,7 @@ connected = False
 
 while(not connected):
     try:
-        mqttc.connect("127.0.0.1", 1883, 60, '', 0, True)
+        mqttc.connect("mosquitto", 1883, 60, '', 0, True)
         connected = True
     except ConnectionRefusedError:
         print("Failed to connect. Retrying...")

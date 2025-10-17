@@ -17,12 +17,18 @@ services:
       - type: bind
         source: ./mosquitto-config/
         target: /mosquitto/config/
+    networks:
+      - mosquitto
   mqtt-client:
     environment:
       MQTT_CLIENT_USER: ${MQTT_CLIENT_USER}
       MQTT_CLIENT_PASSWORD: ${MQTT_CLIENT_PASSWORD}
     build:
       context: ./mqtt_client/
-    network_mode: "service:mosquitto"
+    networks:
+      - mosquitto
     depends_on:
       - mosquitto
+
+networks:
+  mosquitto:
