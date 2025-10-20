@@ -26,3 +26,16 @@ info essenciais:
     -> ultima atualização
 
 - situação da estação
+    -> online / offline
+    -> bateria / alimentação 
+    -> qualidade sinal
+    -> defeito em algum sensor
+
+- tendencia e previsão
+    -> temperatura ta subindo ou caindo?
+    -> pressão está subindo ou caindo?
+    -> Grafico das ultimas horas 
+
+- Recordes do dia, semana e mes
+
+
