@@ -2,7 +2,14 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.enums import MQTTProtocolVersion
 import json
 from time import sleep
+from database import engine
+from models import Base
 import os
+
+print("Creating ORM SQL Tables..")
+Base.metadata.create_all(bind=engine)
+print("Tables created successfully.")
+
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Conectado: {reason_code}")
@@ -13,9 +20,9 @@ def on_connect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     payload = json.loads(msg.payload)
     print(msg.topic)
-    print(f"Value: {payload["value"]}")
-    print(f"Unit: {payload["unit"]}")
-    print(f"Timestamp: {payload["timestamp"]}")
+    print(f"Value: {payload['value']}")
+    print(f"Unit: {payload['unit']}")
+    print(f"Timestamp: {payload['timestamp']}")
 
 try:
     user_name = os.environ["MQTT_CLIENT_USER"]

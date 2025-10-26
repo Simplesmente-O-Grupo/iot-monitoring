@@ -23,6 +23,7 @@ services:
     environment:
       MQTT_CLIENT_USER: ${MQTT_CLIENT_USER}
       MQTT_CLIENT_PASSWORD: ${MQTT_CLIENT_PASSWORD}
+      DATABASE_URL: postgresql://root:public@postgres:5432/control_station
     build:
       context: ./mqtt_client/
     networks:
@@ -33,14 +34,18 @@ services:
     image: postgres:13
     container_name: postgres
     networks:
-      - database
+      - mosquitto
+    ports:
+    - "5432:5432"
     environment:
       POSTGRES_PASSWORD: public
       POSTGRES_USER: root
       POSTGRES_DB: control_station
     volumes:
-      - ${PWD}/database/init_scripts:/docker-entrypoint-initdb.d
+      #- ${PWD}/database/init_scripts:/docker-entrypoint-initdb.d
       - db_data:/var/lib/postgresql/data
+
+  
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -50,7 +55,7 @@ services:
     ports:
       - "5050:80"
     networks:
-      - database
+      - mosquitto
     depends_on:
       - postgres
 networks:
