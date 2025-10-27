@@ -1,0 +1,41 @@
+Estratégia de implementação Frontend/Backend para sistema de estação meteorológica com ESP32
+
+- Formato JSON padronizado (sugestão):
+{
+  "station_id": "ESP32_001",
+  "timestamp": 1697203200,
+  "readings": {
+    "temperature": 25.4,
+    "humidity": 65.2,
+    "pressure": 1013.25,
+    "luminosity": 450,
+    "wind_direction": 180,
+    "wind_speed": 5.2
+  }
+}
+
+
+-  VISÃO CLIENT:
+info essenciais:
+- condições em tempo real: 
+    -> Temperatura
+    -> Umidade
+    -> Pressao atmosférica
+    -> Luminosidade
+    -> Velocidade e direção do vento
+    -> ultima atualização
+
+- situação da estação
+    -> online / offline
+    -> bateria / alimentação 
+    -> qualidade sinal
+    -> defeito em algum sensor
+
+- tendencia e previsão
+    -> temperatura ta subindo ou caindo?
+    -> pressão está subindo ou caindo?
+    -> Grafico das ultimas horas 
+
+- Recordes do dia, semana e mes
+
+
