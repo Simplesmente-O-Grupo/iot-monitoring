@@ -30,6 +30,7 @@ services:
       - mosquitto
     depends_on:
       - mosquitto
+      - postgres
   postgres:
     image: postgres:13
     container_name: postgres

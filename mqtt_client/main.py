@@ -2,9 +2,13 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.enums import MQTTProtocolVersion
 import json
 from time import sleep
-from database import engine
-from models import Base
+from database import engine, SessionLocal
+from models import Base, Reading
 import os
+from time import sleep
+
+print("Sleeping for 10 seconds to wait for db setup...")
+sleep(10)
 
 print("Creating ORM SQL Tables..")
 Base.metadata.create_all(bind=engine)
@@ -16,13 +20,53 @@ def on_connect(client, userdata, flags, reason_code, properties):
     # Me inscrevo em todos os tópicos sobre clima
     client.subscribe("weather/#")
 
+# TODO: Avisar o time do ESP para usar este formato:
+# Tópico MQTT: /weather/<stationid>
+# Corpo:
+# {
+#   "sensor": <sensor device id>,
+#   "unit": <measure id>",
+#   "reading_values: [
+#        <valor da medida, pode ser inteiro ou decimal>,
+#       . . .
+#    ],
+#   "reading_timestamps": [
+#        <timestamp das medidas>,
+#       . . .
+#    ]
+# }
 # Simplesmente imprime a mensagem como texto.
 def on_message(client, userdata, msg):
     payload = json.loads(msg.payload)
-    print(msg.topic)
-    print(f"Value: {payload['value']}")
-    print(f"Unit: {payload['unit']}")
-    print(f"Timestamp: {payload['timestamp']}")
+    topic = msg.topic.split('/')[-1]
+    if topic.isnumeric():
+        stationId = int(topic)
+    else:
+        stationId = None
+
+    try:
+        sensor = int(payload["sensor"])
+        measure = int(payload["unit"])
+        readings = []
+        # É para reading_values e reading_timestamps terem o mesmo tamanho,
+        # Mas não dá para saber.
+        for i in range(0, min(len(payload["reading_values"]), len(payload["reading_timestamps"]))):
+            readings.append({
+                "value": float(payload["reading_values"][i]),
+                "timestamp": int(payload["reading_timestamps"][i])
+            })
+
+    except:
+        print(f"ERRO! Leitura mal formatada {payload}")
+        return
+
+    session = SessionLocal()
+    session.begin()
+    for reading in readings:
+        print(reading)
+        session.add(Reading(sensor_device_id=stationId, measure_id=measure, value=reading['value']))
+    session.commit()
+    session.close()
 
 try:
     user_name = os.environ["MQTT_CLIENT_USER"]
