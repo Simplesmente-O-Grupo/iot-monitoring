@@ -60,6 +60,7 @@ class Measure(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), nullable=True, index=True)
+    unit_code = Column(String(10), nullable=True)
 
     # Relationships
     readings = relationship("Reading", back_populates="measure")
@@ -75,6 +76,7 @@ class Reading(Base):
     sensor_device_id = Column(Integer, ForeignKey("sensor_devices.id"), nullable=True, index=True)
     measure_id = Column(Integer, ForeignKey("measures.id"), nullable=True, index=True)
     value = Column(Float, nullable=True)
+    time = Column(DateTime, nullable=True)
 
     # Relationships
     sensor_device = relationship("SensorDevice", back_populates="readings")

@@ -6,6 +6,7 @@ from database import engine, SessionLocal
 from models import Base, Reading
 import os
 from time import sleep
+from datetime import datetime
 
 print("Sleeping for 10 seconds to wait for db setup...")
 sleep(10)
@@ -64,7 +65,7 @@ def on_message(client, userdata, msg):
     session.begin()
     for reading in readings:
         print(reading)
-        session.add(Reading(sensor_device_id=stationId, measure_id=measure, value=reading['value']))
+        session.add(Reading(sensor_device_id=stationId, measure_id=measure, value=reading['value'], time=datetime.fromtimestamp(reading['timestamp'],)))
     session.commit()
     session.close()
 
