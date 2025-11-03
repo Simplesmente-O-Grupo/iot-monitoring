@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from sqlalchemy import select
 from ..database import SessionLocal
 from ..models import Measure
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix='/measures',
@@ -24,3 +25,16 @@ async def get_measures():
     dc['size'] = len(dc['measures'])
     session.close()
     return dc
+
+class PostMeasure(BaseModel):
+    name: str
+    unit_code: str
+
+@router.post('/')
+async def post_measure(measure: PostMeasure):
+    session = SessionLocal()
+    session.begin()
+    session.add(Measure(name=measure.name, unit_code=measure.unit_code))
+    session.commit()
+    session.close()
+    return {'msg': 'Unidade adicionada com sucesso.'}
