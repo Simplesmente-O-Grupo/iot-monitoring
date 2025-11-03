@@ -25,6 +25,7 @@ async def get_locations():
         }
         dc['locations'].append(l)
     dc['size'] = len(dc['locations'])
+    session.close()
     return dc
     
 

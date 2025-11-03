@@ -30,4 +30,5 @@ async def get_stations():
         }
         dc['stations'].append(stat)
     dc['size'] = len(dc['stations'])
+    session.close()
     return dc

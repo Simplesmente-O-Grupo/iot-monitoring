@@ -24,4 +24,5 @@ async def get_sensors():
              }
          dc['sensors'].append(dev)
     dc['size'] = len(dc['sensors'])
+    session.close()
     return dc

@@ -24,5 +24,6 @@ async def get_readings():
         }
         dc['readings'].append(re)
     dc['size'] = len(dc['readings'])
+    session.close()
     return dc
 

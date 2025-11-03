@@ -22,4 +22,5 @@ async def get_measures():
         }
         dc['measures'].append(mem)
     dc['size'] = len(dc['measures'])
+    session.close()
     return dc
