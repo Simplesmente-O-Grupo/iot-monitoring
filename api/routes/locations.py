@@ -12,10 +12,11 @@ router = APIRouter(
 async def get_locations():
     dc = {'locations': []}
     session = SessionLocal()
-    stmt = select(Location.street, Location.avenue, Location.zip_code)
-    locs = session.execute(stmt).all() # TODO: Page results
-    for loc in locs:
+    stmt = select(Location)
+    locs = session.execute(stmt) # TODO: Page results
+    for loc in locs.scalars():
         l = {
+            'id': loc.id,
             'street': loc.street,
             'avenue': loc.avenue,
             'zip_code': loc.zip_code
