@@ -31,7 +31,7 @@ async def get_sensors():
 
 class PostSensor(BaseModel):
     name: str
-    installation_date: int
+    installation_date: int | None = None
     station_id: int
 
 @router.post('/')
@@ -44,7 +44,10 @@ async def post_sensor(sensor: PostSensor):
             status_code=404,
             detail=f"Não existe estação com id {sensor.station_id}"
         )
-    installation_date = datetime.fromtimestamp(sensor.installation_date)
+    if not sensor.installation_date:
+        installation_date = station.installation_date
+    else:
+        installation_date = datetime.fromtimestamp(sensor.installation_date)
 
     session.add(SensorDevice(name=sensor.name, installation_date=installation_date, station_id=sensor.station_id, is_active=True))
     session.commit()
