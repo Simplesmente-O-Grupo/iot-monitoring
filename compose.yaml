@@ -28,6 +28,7 @@ services:
       context: ./mqtt_client/
     networks:
       - mosquitto
+      - database
     depends_on:
       - mosquitto
       - postgres
@@ -35,9 +36,7 @@ services:
     image: postgres:13
     container_name: postgres
     networks:
-      - mosquitto
-    ports:
-    - "5432:5432"
+      - database
     environment:
       POSTGRES_PASSWORD: public
       POSTGRES_USER: root
@@ -45,8 +44,6 @@ services:
     volumes:
       #- ${PWD}/database/init_scripts:/docker-entrypoint-initdb.d
       - db_data:/var/lib/postgresql/data
-
-  
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -56,9 +53,19 @@ services:
     ports:
       - "5050:80"
     networks:
-      - mosquitto
+      - database
     depends_on:
       - postgres
+  api:
+    build:
+      context: ./api/
+    networks:
+      - database
+    ports:
+      - "127.0.0.1:8000:80"
+    depends_on:
+      - postgres
+
 networks:
   mosquitto:
   database:
