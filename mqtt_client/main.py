@@ -40,6 +40,8 @@ def on_connect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     payload = json.loads(msg.payload)
     topic = msg.topic.split('/')[-1]
+    print(f"GOT MESSAGE {payload}")
+
     if topic.isnumeric():
         stationId = int(topic)
     else:
@@ -80,7 +82,7 @@ except KeyError:
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=MQTTProtocolVersion.MQTTv5)
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
-mqttc.username_pw_set(user_name, user_pass)
+#mqttc.username_pw_set(user_name, user_pass)
 
 connected = False
 
