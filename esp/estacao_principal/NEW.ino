@@ -1,0 +1,298 @@
+// Bibliotecas originais
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+#include <BH1750.h>
+#include <DHT.h>
+#include <WiFi.h>
+#include <PubSubClient.h> // Para MQTT
+#include <ArduinoJson.h>  // Para o payload
+#include <time.h>         // Para o timestamp NTP
+
+//wifi
+const char* ssid = "NOME_DA_SUA_REDE_WIFI";
+const char* password = "SENHA_DA_SUA_REDE_WIFI";
+
+//MQTT
+const char* mqtt_server = "IP_OU_DOMINIO_DO_SEU_BROKER_MQTT"; // Ex: "192.168.1.100" ou "broker.hivemq.com"
+const int   mqtt_port = 1883;
+const char* station_id = "estacao_principal_01"; // <stationid> do seu tópico
+
+//NTP (Timestamp)
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = -3 * 3600; // Offset GMT (Ex: -3 horas para Brasil)
+const int   daylightOffset_sec = 0;     // Horário de verão (0 = desativado)
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+//codigo sensores
+
+// LM393
+#define LM393_INTERVAL 1000
+#define LM393_PIN 35
+volatile unsigned long contagem_lm393 = 0; [cite_start]// [cite: 1]
+volatile bool prevLm393State = LOW; [cite_start]// [cite: 2]
+void isr_lm393() {
+  bool state = digitalRead(LM393_PIN);
+  [cite_start]if (prevLm393State != state) { // [cite: 3]
+    contagem_lm393++;
+  }
+  prevLm393State = state;
+}
+unsigned long lastTime_lm393 = 0;
+
+// BH1750
+#define BH1750_INTERVAL 2000
+BH1750 lightMeter;
+unsigned long lastTime_bh1750 = 0;
+
+// DHT11
+#define DHT_PIN 32
+#define DHTTYPE DHT11
+DHT dht(DHT_PIN, DHTTYPE);
+[cite_start]#define DHT11_HUM_INTERVAL  4000 // [cite: 5]
+unsigned long lastTime_dht11_hum = 0;
+
+// BMP280
+Adafruit_BMP280 bmp;
+#define BMP280_PRESSURE_INTERVAL 5000
+#define BMP280_TEMPERATURE_INTERVAL 3000
+unsigned long lastTime_bmp280_press = 0;
+unsigned long lastTime_bmp280_temp = 0; [cite_start]// [cite: 6]
+
+// Função para obter o timestamp Unix (segundos desde 1970)
+unsigned long getTimestamp() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Falha ao obter hora local (NTP)");
+    return 0;
+  }
+  time(&now);
+  return (unsigned long)now;
+}
+
+// Função para publicar a mensagem no formato solicitado
+void publishMqttMessage(String sensor_id, String unit_id, float reading_value) {
+  if (!client.connected()) {
+    Serial.println("Cliente MQTT desconectado. Ignorando publicação.");
+    return;
+  }
+
+  unsigned long timestamp = getTimestamp();
+  if (timestamp == 0) {
+    Serial.println("Timestamp inválido. Ignorando publicação.");
+    return;
+  }
+  
+  // Monta o tópico: /weather/<stationid>
+  String topic = "/weather/" + String(station_id);
+
+  // Monta o Payload JSON
+  StaticJsonDocument<256> doc;
+  doc["sensor"] = sensor_id;
+  doc["unit"] = unit_id;
+  doc.createNestedArray("reading_values").add(reading_value);
+  doc.createNestedArray("reading_timestamps").add(timestamp);
+
+  // Serializa o JSON para uma string
+  String payload;
+  serializeJson(doc, payload);
+
+  // Publica a mensagem
+  if (client.publish(topic.c_str(), payload.c_str())) {
+    Serial.print("Mensagem MQTT publicada [");
+    Serial.print(topic);
+    Serial.print("]: ");
+    Serial.println(payload);
+  } else {
+    Serial.println("Falha ao publicar mensagem MQTT.");
+  }
+}
+
+// Função de Callback do MQTT
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Mensagem recebida [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+// Conecta ao WiFi
+void setupWiFi() {
+  delay(10);
+  Serial.println();
+  Serial.print("Conectando em ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi Conectado!");
+  Serial.print("Endereco IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+// Sincroniza o relógio com o servidor NTP
+void setupNTP() {
+  Serial.println("Sincronizando hora com NTP...");
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  
+  // Espera até que o tempo seja sincronizado
+  unsigned long startAttempt = millis();
+  while (getTimestamp() < 1672531200) { // Espera até ser um timestamp válido (após 2023)
+    delay(500);
+    Serial.print(".");
+    if (millis() - startAttempt > 10000) { // Timeout de 10s
+        Serial.println("\nFalha ao sincronizar NTP. Reiniciando...");
+        ESP.restart();
+    }
+  }
+  Serial.println("\nNTP Sincronizado!");
+}
+
+// Reconecta ao Broker MQTT
+void reconnectMQTT() {
+  while (!client.connected()) {
+    Serial.print("Tentando conexao MQTT...");
+    // Tenta conectar
+    // (Pode adicionar usuário/senha aqui se precisar)
+    if (client.connect(station_id)) {
+      Serial.println("conectado!");
+      // Você pode se inscrever em tópicos aqui, se necessário
+      // client.subscribe("seu/topico/de/comando");
+    } else {
+      Serial.print("falha, rc=");
+      Serial.print(client.state());
+      Serial.println(" tentando novamente em 5 segundos");
+      delay(5000);
+    }
+  }
+}
+
+//SETUP
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(21, 22);
+
+  // Inicia WiFi
+  setupWiFi();
+  
+  // Inicia NTP
+  setupNTP();
+
+  // Configura o cliente MQTT
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(mqttCallback);
+
+  // LM393
+  pinMode(LM393_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(LM393_PIN), isr_lm393, CHANGE);
+  
+  // BH1750
+  lightMeter.begin(); [cite_start]// [cite: 7]
+
+  // DHT11
+  dht.begin();
+
+  // BMP280
+  bmp.begin(0x76);
+
+  Serial.println("Estacao iniciada"); [cite_start]// [cite: 8]
+}
+
+//LOOP
+void loop() {
+  unsigned long now = millis();
+
+  // Garante que o MQTT está conectado
+  if (!client.connected()) {
+    reconnectMQTT();
+  }
+  client.loop(); // Essencial para o PubSubClient
+
+  // LM393
+  if (now - lastTime_lm393 >= LM393_INTERVAL) {
+    int pulsos;
+    const float FATOR_KHM = 2.4; [cite_start]// [cite: 9]
+    
+    noInterrupts();
+    pulsos = contagem_lm393;
+    contagem_lm393 = 0;
+    interrupts();
+    
+    int giros = pulsos / 10;
+    float rps = ((float)pulsos/10.0f) / (LM393_INTERVAL / 1000.0f); [cite_start]// [cite: 10]
+    float velocidade = rps * FATOR_KHM;
+
+    Serial.print("Velocidade do vento: "); // (Corrigi de "tempo")
+    Serial.print(velocidade);
+    Serial.println(" km/h"); [cite_start]// [cite: 11]
+    
+    //PUBLICA MQTT
+    // (sensor_id, unit_id, valor)
+    publishMqttMessage("LM393_Vento", "km/h", velocidade);
+    
+    lastTime_lm393 = now;
+  }
+
+  // BH1750
+  if (now - lastTime_bh1750 >= BH1750_INTERVAL) {
+    float luz = lightMeter.readLightLevel(); [cite_start]// [cite: 12]
+    
+    Serial.print("Luz: ");
+    Serial.print(luz);
+    Serial.println(" lux");
+
+    //PUBLICA MQTT
+    publishMqttMessage("BH1750", "lux", luz);
+
+    lastTime_bh1750 = now;
+  }
+
+  // DHT11 - Umidade
+  if (now - lastTime_dht11_hum >= DHT11_HUM_INTERVAL) {
+    float umidade = dht.readHumidity(); [cite_start]// [cite: 13]
+    
+    Serial.print("Umidade: ");
+    Serial.print(umidade);
+    Serial.println(" %");
+    
+    // --- PUBLICA MQTT ---
+    publishMqttMessage("DHT11", "percent", umidade);
+    
+    lastTime_dht11_hum = now;
+  }
+
+  // BMP280 - AIR PRESSURE
+  if (now - lastTime_bmp280_press >= BMP280_PRESSURE_INTERVAL) {
+    float pressao = bmp.readPressure() / 100.0f; [cite_start]// [cite: 14]
+    
+    Serial.print("Pressao: ");
+    Serial.print(pressao);
+    Serial.println(" hPa");
+    
+    //PUBLICA MQTT
+    publishMqttMessage("BMP280_Pressao", "hPa", pressao);
+    
+    lastTime_bmp280_press = now;
+  }
+
+  // BMP280 - TEMPERATURE
+  if (now - lastTime_bmp280_temp >= BMP280_TEMPERATURE_INTERVAL) {
+    float temperatura = bmp.readTemperature(); [cite_start]// [cite: 15]
+    
+    Serial.print("Temperatura: ");
+    Serial.print(temperatura);
+    Serial.println(" C");
+    
+    //PUBLICA MQTT
+    publishMqttMessage("BMP280_Temp", "celsius", temperatura);
+    
+    lastTime_bmp280_temp = now;
+  }
+}

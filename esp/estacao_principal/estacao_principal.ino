@@ -2,6 +2,9 @@
 #include <Adafruit_BMP280.h>
 #include <BH1750.h>
 #include <DHT.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 // LM393
 #define LM393_INTERVAL 1000
