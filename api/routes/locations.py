@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from sqlalchemy import select
 from ..database import SessionLocal
 from ..models import Location
+from ..schemas.location import PostLocation
 
 from pydantic import BaseModel
 
@@ -28,12 +29,6 @@ async def get_locations():
     session.close()
     return dc
     
-
-class PostLocation(BaseModel):
-    street: str
-    avenue: str
-    zip_code:str
-
 @router.post('/')
 async def create_location(location: PostLocation):
     session = SessionLocal()

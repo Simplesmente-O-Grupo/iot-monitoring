@@ -1,7 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from ..database import SessionLocal
-from ..models import SensorDevice
+from ..models import SensorDevice, Station
+from ..schemas.sensor import PostSensor
+from datetime import datetime
 
 router = APIRouter(
     prefix='/sensors',
@@ -26,3 +28,24 @@ async def get_sensors():
     dc['size'] = len(dc['sensors'])
     session.close()
     return dc
+
+@router.post('/')
+async def post_sensor(sensor: PostSensor):
+    session = SessionLocal()
+    station = session.get(Station, sensor.station_id)
+    if not station:
+        session.close()
+        raise HTTPException(
+            status_code=404,
+            detail=f"Não existe estação com id {sensor.station_id}"
+        )
+    if not sensor.installation_date:
+        installation_date = station.installation_date
+    else:
+        installation_date = datetime.fromtimestamp(sensor.installation_date)
+
+    session.add(SensorDevice(name=sensor.name, installation_date=installation_date, station_id=sensor.station_id, is_active=True))
+    session.commit()
+    session.close()
+    return {'msg': 'Sensor criado com sucesso.'}
+
