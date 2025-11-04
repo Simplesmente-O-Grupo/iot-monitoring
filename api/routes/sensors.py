@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from ..database import SessionLocal
 from ..models import SensorDevice, Station
-from pydantic import BaseModel
+from ..schemas.sensor import PostSensor
 from datetime import datetime
 
 router = APIRouter(
@@ -28,11 +28,6 @@ async def get_sensors():
     dc['size'] = len(dc['sensors'])
     session.close()
     return dc
-
-class PostSensor(BaseModel):
-    name: str
-    installation_date: int | None = None
-    station_id: int
 
 @router.post('/')
 async def post_sensor(sensor: PostSensor):
