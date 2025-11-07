@@ -61,14 +61,25 @@ services:
       context: ./api/
     networks:
       - database
+      - api-net
     ports:
       - "127.0.0.1:8000:80"
     depends_on:
       - postgres
+  frontend:
+    build:
+      context: ./frontend/
+    networks:
+      - api-net
+    ports:
+      - "127.0.0.1:6767:80"
+    depends_on:
+      - api
 
 networks:
   mosquitto:
   database:
+  api-net:
 
 volumes:
   db_data:
