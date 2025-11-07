@@ -7,6 +7,13 @@
 #include <PubSubClient.h> // Para MQTT
 #include <ArduinoJson.h>  // Para o payload
 #include <time.h>         // Para o timestamp NTP
+#include "reading.h"
+
+const int velocity_id = 1; // ID da velocidade no banco.
+const int lux_id = 2;
+const int humidity_id = 3;
+const int pressure_id = 4;
+const int temperature_id = 5;
 
 //wifi
 const char* ssid = "demiurgoodeusarquitetodamentira";
@@ -28,7 +35,9 @@ PubSubClient client(espClient);
 //codigo sensores
 
 // LM393
+const int lm393_id = 1; // ID do sensor no banco de dados.
 #define LM393_INTERVAL 1000
+#define LM393_SEND_INTERVAL 60000
 #define LM393_PIN 35
 volatile unsigned long contagem_lm393 = 0; // [cite: 1]
 volatile bool prevLm393State = LOW; // [cite: 2]
@@ -40,25 +49,45 @@ void isr_lm393() {
   prevLm393State = state;
 }
 unsigned long lastTime_lm393 = 0;
+unsigned long lastTime_lm393_send = 0;
+ReadingBuffer lm393_buf = {0};
 
 // BH1750
+const int bh1750_id = 2; // ID do sensor no banco de dados.
 #define BH1750_INTERVAL 2000
+#define BH1750_SEND_INTERVAL 60000
 BH1750 lightMeter;
 unsigned long lastTime_bh1750 = 0;
+unsigned long lastTime_bh1750_send = 0;
+ReadingBuffer bh1750_buf = {0};
 
 // DHT11
+const int dht11_id = 3;
 #define DHT_PIN 32
 #define DHTTYPE DHT11
 DHT dht(DHT_PIN, DHTTYPE);
 #define DHT11_HUM_INTERVAL  4000 // [cite: 5]
+#define DHT11_HUM_SEND_INTERVAL 60000
 unsigned long lastTime_dht11_hum = 0;
+unsigned long lastTime_dht11_hum_send = 0;
+ReadingBuffer dht11_buf = {0};
 
 // BMP280
+const int bmp280_id = 4;
 Adafruit_BMP280 bmp;
 #define BMP280_PRESSURE_INTERVAL 5000
+#define BMP280_PRESSURE_SEND_INTERVAL 60000
+
 #define BMP280_TEMPERATURE_INTERVAL 3000
+#define BMP280_TEMPERATURE_SEND_INTERVAL 60000
 unsigned long lastTime_bmp280_press = 0;
+unsigned long lastTime_bmp280_press_send = 0;
+
 unsigned long lastTime_bmp280_temp = 0; // [cite: 6]
+unsigned long lastTime_bmp280_temp_send = 0;
+
+ReadingBuffer bmp280_pres_buf = {0};
+ReadingBuffer bmp280_temp_buf = {0};
 
 // Função para obter o timestamp Unix (segundos desde 1970)
 unsigned long getTimestamp() {
@@ -73,18 +102,15 @@ unsigned long getTimestamp() {
 }
 
 // Função para publicar a mensagem no formato solicitado
-void publishMqttMessage(int sensor_id, int unit_id, float reading_value) {
+void publishMqttMessages(int sensor_id, int unit_id, ReadingBuffer *buf) {
+  // Nada para enviar, pula.
+  if (buf->size <= 0) return;
+
   if (!client.connected()) {
     Serial.println("Cliente MQTT desconectado. Ignorando publicação.");
     return;
   }
 
-  unsigned long timestamp = getTimestamp();
-  if (timestamp == 0) {
-    Serial.println("Timestamp inválido. Ignorando publicação.");
-    return;
-  }
-  
   // Monta o tópico: /weather/<stationid>
   String topic = "weather/" + String(station_id);
 
@@ -92,8 +118,13 @@ void publishMqttMessage(int sensor_id, int unit_id, float reading_value) {
   StaticJsonDocument<256> doc;
   doc["sensor"] = sensor_id;
   doc["unit"] = unit_id;
-  doc.createNestedArray("reading_values").add(reading_value);
-  doc.createNestedArray("reading_timestamps").add(timestamp);
+  JsonArray values = doc.createNestedArray("reading_values");
+  JsonArray timestamps = doc.createNestedArray("reading_timestamps");
+
+  for (int i = 0; i < buf->size; i++) {
+    timestamps.add(buf->timestamps[i]);
+    values.add(buf->values[i]);
+  }
 
   // Serializa o JSON para uma string
   String payload;
@@ -105,6 +136,7 @@ void publishMqttMessage(int sensor_id, int unit_id, float reading_value) {
     Serial.print(topic);
     Serial.print("]: ");
     Serial.println(payload);
+    buffer_clear(buf);
   } else {
     Serial.println("Falha ao publicar mensagem MQTT.");
   }
@@ -233,9 +265,11 @@ void loop() {
     Serial.print(velocidade);
     Serial.println(" km/h"); // [cite: 11]
     
-    //PUBLICA MQTT
     // (sensor_id, unit_id, valor)
-    publishMqttMessage(2, 2, velocidade);
+    //publishMqttMessage(2, 2, velocidade);
+    
+    // Adiciona leitura no buffer.
+    buffer_add(&lm393_buf, getTimestamp(), velocidade);
     
     lastTime_lm393 = now;
   }
@@ -249,7 +283,10 @@ void loop() {
     Serial.println(" lux");
 
     //PUBLICA MQTT
-    publishMqttMessage(3, 1, luz);
+    //publishMqttMessage(3, 1, luz);
+
+    // Adiciona no buffer
+    buffer_add(&bh1750_buf, getTimestamp(),  luz);
 
     lastTime_bh1750 = now;
   }
@@ -263,7 +300,11 @@ void loop() {
     Serial.println(" %");
     
     // --- PUBLICA MQTT ---
-    publishMqttMessage(1, 4, umidade);
+    //publishMqttMessage(1, 4, umidade);
+    
+
+    // Adiciona no buffer
+    buffer_add(&dht11_buf, getTimestamp(), umidade);
     
     lastTime_dht11_hum = now;
   }
@@ -277,7 +318,10 @@ void loop() {
     Serial.println(" hPa");
     
     //PUBLICA MQTT
-    publishMqttMessage(4, 3, pressao);
+    //publishMqttMessage(4, 3, pressao);
+
+    // Adiciona no buffer
+    buffer_add(&bmp280_pres_buf, getTimestamp(), pressao);
     
     lastTime_bmp280_press = now;
   }
@@ -291,8 +335,63 @@ void loop() {
     Serial.println(" C");
     
     //PUBLICA MQTT
-    publishMqttMessage(4, 5, temperatura);
+    //publishMqttMessage(4, 5, temperatura);
     
+    // Adiciona no buffer
+    buffer_add(&bmp280_temp_buf, getTimestamp(), temperatura);
+
     lastTime_bmp280_temp = now;
   }
+
+
+  //////////////////////////////////////////////////
+  //                     SEND                     //
+  //////////////////////////////////////////////////
+  // LM393
+  if (buffer_full(&lm393_buf) || (now - lastTime_lm393_send >= LM393_SEND_INTERVAL)) {
+
+    publishMqttMessages(lm393_id, velocity_id, &lm393_buf);
+
+    lastTime_lm393_send = now;
+  }
+
+  // BH1750
+  if (buffer_full(&bh1750_buf) || (now - lastTime_bh1750_send >= BH1750_SEND_INTERVAL)) {
+
+    publishMqttMessages(bh1750_id, lux_id, &bh1750_buf);
+
+    lastTime_bh1750_send = now;
+  }
+
+  // DHT11
+  if (buffer_full(&dht11_buf) || (now - lastTime_dht11_hum_send >= DHT11_HUM_SEND_INTERVAL)) {
+
+    publishMqttMessages(dht11_id, humidity_id, &dht11_buf);
+
+    lastTime_dht11_hum_send = now;
+  }
+
+  // BMP280 - PRESSURE
+  if (buffer_full(&bmp280_pres_buf) || (now - lastTime_bmp280_press_send >= BMP280_PRESSURE_SEND_INTERVAL)) {
+
+    publishMqttMessages(bmp280_id, pressure_id, &bmp280_pres_buf);
+
+    lastTime_bmp280_press_send = now;
+  }
+  
+  // BMP280 - TEMPERATURE
+  if (buffer_full(&bmp280_temp_buf) || (now - lastTime_bmp280_temp_send >= BMP280_TEMPERATURE_SEND_INTERVAL)) {
+
+    publishMqttMessages(bmp280_id, temperature_id, &bmp280_temp_buf);
+
+    lastTime_bmp280_temp_send = now;
+  }
+
+  //// LM393
+  //if (buffer_full(&lm393_buf) || (now - lastTime_lm393_send >= LM393_SEND_INTERVAL)) {
+
+  //  publishMqttMessage(lm393_id, velocity_id, lm393_buf
+
+  //  lastTime_lm393_send = now;
+  //}
 }
