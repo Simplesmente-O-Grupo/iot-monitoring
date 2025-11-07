@@ -42,7 +42,6 @@ services:
       POSTGRES_USER: root
       POSTGRES_DB: control_station
     volumes:
-      #- ${PWD}/database/init_scripts:/docker-entrypoint-initdb.d
       - db_data:/var/lib/postgresql/data
   pgadmin:
     image: dpage/pgadmin4
@@ -61,7 +60,6 @@ services:
       context: ./api/
     networks:
       - database
-      - api-net
     ports:
       - "127.0.0.1:8000:80"
     depends_on:
@@ -69,8 +67,6 @@ services:
   frontend:
     build:
       context: ./frontend/
-    networks:
-      - api-net
     ports:
       - "127.0.0.1:6767:80"
     depends_on:
@@ -79,7 +75,6 @@ services:
 networks:
   mosquitto:
   database:
-  api-net:
 
 volumes:
   db_data:
