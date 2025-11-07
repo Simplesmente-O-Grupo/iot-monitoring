@@ -206,6 +206,12 @@ void reconnectMQTT() {
   }
 }
 
+void manage_lm393(unsigned long now);
+void manage_bht1750(unsigned long now);
+void manage_dht11(unsigned long now);
+void manage_bmp280_press(unsigned long now);
+void manage_bmp280_temp(unsigned long now);
+
 //SETUP
 void setup() {
   Serial.begin(115200);
@@ -247,7 +253,19 @@ void loop() {
   }
   client.loop(); // Essencial para o PubSubClient
 
-  // LM393
+  manage_lm393(now);
+
+  manage_bht1750(now);
+
+  manage_dht11(now);
+
+  manage_bmp280_press(now);
+
+  manage_bmp280_temp(now);
+}
+
+void manage_lm393(unsigned long now) {
+  // Leitura
   if (now - lastTime_lm393 >= LM393_INTERVAL) {
     int pulsos;
     const float FATOR_KHM = 2.4; // [cite: 9]
@@ -274,7 +292,17 @@ void loop() {
     lastTime_lm393 = now;
   }
 
-  // BH1750
+  // Envio
+  if (buffer_full(&lm393_buf) || (now - lastTime_lm393_send >= LM393_SEND_INTERVAL)) {
+
+    publishMqttMessages(lm393_id, velocity_id, &lm393_buf);
+
+    lastTime_lm393_send = now;
+  }
+}
+
+void manage_bht1750(unsigned long now) {
+  // Leitura
   if (now - lastTime_bh1750 >= BH1750_INTERVAL) {
     float luz = lightMeter.readLightLevel(); // [cite: 12]
     
@@ -291,7 +319,17 @@ void loop() {
     lastTime_bh1750 = now;
   }
 
-  // DHT11 - Umidade
+  // Envio
+  if (buffer_full(&bh1750_buf) || (now - lastTime_bh1750_send >= BH1750_SEND_INTERVAL)) {
+
+    publishMqttMessages(bh1750_id, lux_id, &bh1750_buf);
+
+    lastTime_bh1750_send = now;
+  }
+}
+
+void manage_dht11(unsigned long now) {
+  // Leitura
   if (now - lastTime_dht11_hum >= DHT11_HUM_INTERVAL) {
     float umidade = dht.readHumidity(); // [cite: 13]
     
@@ -309,7 +347,17 @@ void loop() {
     lastTime_dht11_hum = now;
   }
 
-  // BMP280 - AIR PRESSURE
+  // Envio
+  if (buffer_full(&dht11_buf) || (now - lastTime_dht11_hum_send >= DHT11_HUM_SEND_INTERVAL)) {
+
+    publishMqttMessages(dht11_id, humidity_id, &dht11_buf);
+
+    lastTime_dht11_hum_send = now;
+  }
+}
+
+void manage_bmp280_press(unsigned long now) {
+  // Leitura
   if (now - lastTime_bmp280_press >= BMP280_PRESSURE_INTERVAL) {
     float pressao = bmp.readPressure() / 100.0f; // [cite: 14]
     
@@ -326,7 +374,17 @@ void loop() {
     lastTime_bmp280_press = now;
   }
 
-  // BMP280 - TEMPERATURE
+  // Envio
+  if (buffer_full(&bmp280_pres_buf) || (now - lastTime_bmp280_press_send >= BMP280_PRESSURE_SEND_INTERVAL)) {
+
+    publishMqttMessages(bmp280_id, pressure_id, &bmp280_pres_buf);
+
+    lastTime_bmp280_press_send = now;
+  }
+}
+
+void manage_bmp280_temp(unsigned long now) {
+  // Leitura
   if (now - lastTime_bmp280_temp >= BMP280_TEMPERATURE_INTERVAL) {
     float temperatura = bmp.readTemperature(); // [cite: 15]
     
@@ -343,55 +401,11 @@ void loop() {
     lastTime_bmp280_temp = now;
   }
 
-
-  //////////////////////////////////////////////////
-  //                     SEND                     //
-  //////////////////////////////////////////////////
-  // LM393
-  if (buffer_full(&lm393_buf) || (now - lastTime_lm393_send >= LM393_SEND_INTERVAL)) {
-
-    publishMqttMessages(lm393_id, velocity_id, &lm393_buf);
-
-    lastTime_lm393_send = now;
-  }
-
-  // BH1750
-  if (buffer_full(&bh1750_buf) || (now - lastTime_bh1750_send >= BH1750_SEND_INTERVAL)) {
-
-    publishMqttMessages(bh1750_id, lux_id, &bh1750_buf);
-
-    lastTime_bh1750_send = now;
-  }
-
-  // DHT11
-  if (buffer_full(&dht11_buf) || (now - lastTime_dht11_hum_send >= DHT11_HUM_SEND_INTERVAL)) {
-
-    publishMqttMessages(dht11_id, humidity_id, &dht11_buf);
-
-    lastTime_dht11_hum_send = now;
-  }
-
-  // BMP280 - PRESSURE
-  if (buffer_full(&bmp280_pres_buf) || (now - lastTime_bmp280_press_send >= BMP280_PRESSURE_SEND_INTERVAL)) {
-
-    publishMqttMessages(bmp280_id, pressure_id, &bmp280_pres_buf);
-
-    lastTime_bmp280_press_send = now;
-  }
-  
-  // BMP280 - TEMPERATURE
+  // Envio
   if (buffer_full(&bmp280_temp_buf) || (now - lastTime_bmp280_temp_send >= BMP280_TEMPERATURE_SEND_INTERVAL)) {
 
     publishMqttMessages(bmp280_id, temperature_id, &bmp280_temp_buf);
 
     lastTime_bmp280_temp_send = now;
   }
-
-  //// LM393
-  //if (buffer_full(&lm393_buf) || (now - lastTime_lm393_send >= LM393_SEND_INTERVAL)) {
-
-  //  publishMqttMessage(lm393_id, velocity_id, lm393_buf
-
-  //  lastTime_lm393_send = now;
-  //}
 }
