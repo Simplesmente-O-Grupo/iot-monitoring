@@ -1,6 +1,7 @@
 # Projeto de estação meteorológica
 Precisamos de um nome melhor.
 
+
 Objetivo: Monitorar dados de sensor de microcontroladores e exibi-los em dashboards.
 
 O plano inicial é esse:
@@ -34,3 +35,5 @@ Inicie o projeto com o docker compose
 # docker compose up -d
 ```
 
+Servidor temporário vue.js
+http://localhost:5173/
