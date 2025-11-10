@@ -1,6 +1,7 @@
 // Bibliotecas originais
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
+#include <AS5600.h>
 #include <BH1750.h>
 #include <DHT.h>
 #include <WiFi.h>
@@ -14,13 +15,13 @@ const int lux_id = 2;
 const int humidity_id = 3;
 const int pressure_id = 4;
 const int temperature_id = 5;
-
+const int angle_id = 6;
 //wifi
-const char* ssid = "demiurgoodeusarquitetodamentira";
-const char* password = "12345678";
+const char* ssid = "";
+const char* password = "";
 
 //MQTT
-const char* mqtt_server = "10.233.10.131"; // Ex: "192.168.1.100" ou "broker.hivemq.com"
+const char* mqtt_server = "mqtt.mattthefreeman.xyz"; // Ex: "192.168.1.100" ou "broker.hivemq.com"
 const int   mqtt_port = 1883;
 const char* station_id = "1"; // <stationid> do seu tópico
 
@@ -88,6 +89,15 @@ unsigned long lastTime_bmp280_temp_send = 0;
 
 ReadingBuffer bmp280_pres_buf = {0};
 ReadingBuffer bmp280_temp_buf = {0};
+
+// AS5600 Direção do vento
+const int as5600_id = 5;
+#define AS5600_INTERVAL 4000
+#define AS5600_SEND_INTERVAL 60000
+AS5600 as5600;
+unsigned long lastTime_as5600 = 0;
+unsigned long lastTime_as5600_send = 0;
+ReadingBuffer as5600_buf = {0};
 
 // Função para obter o timestamp Unix (segundos desde 1970)
 unsigned long getTimestamp() {
@@ -211,6 +221,8 @@ void manage_bht1750(unsigned long now);
 void manage_dht11(unsigned long now);
 void manage_bmp280_press(unsigned long now);
 void manage_bmp280_temp(unsigned long now);
+void manage_as5600(unsigned long now);
+
 
 //SETUP
 void setup() {
@@ -240,6 +252,9 @@ void setup() {
   // BMP280
   bmp.begin(0x76);
 
+  // AS5600
+  as5600.begin();
+
   Serial.println("Estacao iniciada"); // [cite: 8]
 }
 
@@ -262,6 +277,8 @@ void loop() {
   manage_bmp280_press(now);
 
   manage_bmp280_temp(now);
+  
+  manage_as5600(now);
 }
 
 void manage_lm393(unsigned long now) {
@@ -407,5 +424,25 @@ void manage_bmp280_temp(unsigned long now) {
     publishMqttMessages(bmp280_id, temperature_id, &bmp280_temp_buf);
 
     lastTime_bmp280_temp_send = now;
+  }
+}
+
+void manage_as5600(unsigned long now) {
+  // Leitura
+  if (now - lastTime_as5600 >= AS5600_INTERVAL) {
+    float angulo = as5600.readAngle(); // Ângulo em graus (0–360 aprox.)
+    
+    Serial.print("Direcao do vento (angulo): ");
+    Serial.println(angulo);
+
+    buffer_add(&as5600_buf, getTimestamp(), angulo);
+
+    lastTime_as5600 = now;
+  }
+
+  // Envio MQTT
+  if (buffer_full(&as5600_buf) || (now - lastTime_as5600_send >= AS5600_SEND_INTERVAL)) {
+    publishMqttMessages(as5600_id, angle_id, &as5600_buf);
+    lastTime_as5600_send = now;
   }
 }
