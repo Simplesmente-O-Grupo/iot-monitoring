@@ -6,7 +6,8 @@ app = FastAPI()
 
  
 origins = [
-    "http://localhost:5173", # A porta do frontend React
+    "http://localhost:6767", # Ambiente de desenvolvimento
+    "https://dashboard.mattthefreeman.xyz" # Servidor
 ]
 
 app.add_middleware(
