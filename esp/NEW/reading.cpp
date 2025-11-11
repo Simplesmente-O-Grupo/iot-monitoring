@@ -1,7 +1,7 @@
 #include "reading.h"
 
-static inline bool abs(float a) {
-	return a < 0 ? a * -1 : a;
+static inline float abs(float a) {
+	return a < 0 ? -a : a;
 }
 
 bool buffer_add(ReadingBuffer *buf, unsigned long timestamp, float value, float tolerance) {

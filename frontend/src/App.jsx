@@ -33,7 +33,7 @@ function App() {
   const [error, setError] = useState(null);
   const mqttClientRef = useRef(null);
  
-  useEffect(() => {
+  const fetchData = () => {
     fetch(`${API_URL}/readings`) //
       .then(response => response.json())
       .then(data => { 
@@ -62,57 +62,32 @@ function App() {
         setError(err.message);
         setLoading(false);
       });
-  }, []);
- 
+  }
+
+
   useEffect(() => {
-    if (mqttClientRef.current) return;
+	fetchData();
 
-    const client = new Paho.Client('mqtt.mattthefreeman.xyz', MQTT_PORT, `dashboard_${new Date().getTime()}`);
-    
-    function onMessageArrived(message) {
-      console.log("Mensagem MQTT recebida:", message.payloadString);
-      try {
-        const data = JSON.parse(message.payloadString);
-        
-        // Atualiza os estados em tempo real 
-        if (data.measure === 'Temperatura') {
-          setCurrentTemp(data.value.toFixed(1));
-        } else if (data.measure === 'Umidade') {
-          setCurrentHumidity(data.value.toFixed(0));
-        } else if (data.measure === 'Pressão') {
-          setCurrentPressure(data.value.toFixed(0));
-        } else if (data.measure === 'Velocidade do Vento') {
-          setCurrentWind(data.value.toFixed(1));
-        }
-        
-      } catch (e) {
-        console.error("Erro ao processar mensagem MQTT:", e);
-      }
-    }
-
-    function onConnect() {
-      console.log("Conectado ao Mosquitto!");
-      client.subscribe(MQTT_TOPIC);
-    }
-    
-    client.onConnectionLost = (res) => console.log("Conexão MQTT perdida:", res.errorMessage);
-    client.onMessageArrived = onMessageArrived;
-    mqttClientRef.current = client;
-
-    client.connect({
-      userName: MQTT_USER,
-      password: MQTT_PASS,
-      onSuccess: onConnect,
-      useSSL: true,
-      onFailure: (err) => {
-        console.error("Falha ao conectar no MQTT:", err);
-        setError("Falha ao conectar no MQTT em tempo real.");
-      }
-    });
-
-  }, []);  
-
+    const intervalId = setInterval(fetchData, 30000);
+	
+	return () => clearInterval(intervalId);
+  }, []);
   
+  useEffect(() => {
+	 if (tempData.length > 0) {
+		 setCurrentTemp(tempData.at(-1).value.toFixed(1));
+	 }
+     if (humidityData.length > 0) {
+         setCurrentHumidity(humidityData.at(-1).value.toFixed(0));
+	 }
+	 if (pressureData.length > 0) {
+		 setCurrentPressure(pressureData.at(-1).value.toFixed(1));
+	 }
+	 if (windData.length > 0) {
+		 setCurrentWind(windData.at(-1).value.toFixed(1));
+	 }
+  }, [tempData, humidityData, pressureData, windData]);
+
   // RENDERIZAÇÃO 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-200 font-sans">
@@ -140,21 +115,19 @@ function App() {
         {!loading && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/**** Card 1: Temperatura & Pressão ****/}
-            <div className="lg:col-span-2 bg-gray-800 p-6 rounded-xl shadow-lg">
+            {/**** Card 1: Temperatura ****/}
+            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
               <h2 className="text-xl font-semibold mb-4 text-white">
-                Temperatura & Pressão
+                Temperatura
               </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={tempData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis yAxisId="left" stroke="#8884d8" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
                   <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="value" name="Temperatura" stroke="#8884d8" strokeWidth={2} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="value" data={pressureData} name="Pressão" stroke="#82ca9d" strokeWidth={2} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="value" name="°C" stroke="#8884d8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -168,7 +141,7 @@ function App() {
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                  <Line type="monotone" dataKey="value" name="Umidade" stroke="#8884d8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="value" name="%" stroke="#8884d8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -180,9 +153,9 @@ function App() {
                 <LineChart data={pressureData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
+                  <YAxis stroke="#82ca9d" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                  <Line type="monotone" dataKey="value" name="Luminosidade" stroke="#8884d8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="value" name="hPa" stroke="#82ca9d" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -196,7 +169,7 @@ function App() {
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                  <Line type="monotone" dataKey="value" name="Vento" stroke="#8884d8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="value" name="km/h" stroke="#8884d8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -210,11 +183,24 @@ function App() {
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                  <Line type="monotone" dataKey="value" name="Visibilidade" stroke="#8884d8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="value" name="lux" stroke="#8884d8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
 
+            {/**** Card 6: Direção do vento ****/}
+            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+              <h2 className="text-xl font-semibold mb-4 text-white">Direção do vento</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={windDirectionData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
+                  <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                  <Line type="monotone" dataKey="value" name="°" stroke="#8884d8" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
       </main>
