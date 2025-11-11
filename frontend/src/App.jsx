@@ -100,7 +100,7 @@ function App() {
         <div className="space-y-4">
           <StatCard title="Temperature" value={`${currentTemp}°C`} />
           <StatCard title="Humidity" value={`${currentHumidity}%`} />
-          <StatCard title="Wild Speed" value={`${currentWind} km/h`} />
+          <StatCard title="Wind Speed" value={`${currentWind} km/h`} />
           <StatCard title="Pressure" value={`${currentPressure} hPa`} />
         </div>
       </aside>
@@ -134,7 +134,7 @@ function App() {
 
             {/**** Card 2: Umidade ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Umidade</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Humidity</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={humidityData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
@@ -162,7 +162,7 @@ function App() {
 
             {/***** Card 4: Velocidade do Vento *****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Velocidade do Vento</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Wind Speed</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={windData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
@@ -176,7 +176,7 @@ function App() {
 
             {/**** Card 5: Luminosidade ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Luminosidade</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Light Intensity (lux)</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={luminosityData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
@@ -190,7 +190,7 @@ function App() {
 
             {/**** Card 6: Direção do vento ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Direção do vento</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Wind Direction</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={windDirectionData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
