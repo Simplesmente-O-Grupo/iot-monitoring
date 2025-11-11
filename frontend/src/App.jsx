@@ -5,7 +5,7 @@ import {
 import Paho from 'paho-mqtt';
 
 // --- CONFIGURAÇÃO ---
-const API_URL = 'http://localhost:8000'; 
+const API_URL = 'https://api.mattthefreeman.xyz'; 
 const MQTT_PORT = 9001;
 const MQTT_USER = 'usuario_cliente'; 
 const MQTT_PASS = '1234'; // <-- coloquei uma senha padrao, mas ai cada um poe o seu
