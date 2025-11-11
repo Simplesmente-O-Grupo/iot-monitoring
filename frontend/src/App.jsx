@@ -103,7 +103,7 @@ function App() {
       userName: MQTT_USER,
       password: MQTT_PASS,
       onSuccess: onConnect,
-      useSSL: false,
+      useSSL: true,
       onFailure: (err) => {
         console.error("Falha ao conectar no MQTT:", err);
         setError("Falha ao conectar no MQTT em tempo real.");
