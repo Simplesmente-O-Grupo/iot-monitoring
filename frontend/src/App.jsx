@@ -173,11 +173,11 @@ function App() {
               </ResponsiveContainer>
             </div>
 
-            {/**** Card 3: Índice UV ****/}
+            {/**** Card 3: Pressão ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Luminosidade</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Pressão Atmosférica</h2>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={luminosityData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                <LineChart data={pressureData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />

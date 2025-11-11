@@ -7,7 +7,7 @@ typedef struct {
   unsigned int size; // Quantidade de elementos
 } ReadingBuffer;
 
-bool buffer_add(ReadingBuffer *buf, unsigned long timestamp, float value);
+bool buffer_add(ReadingBuffer *buf, unsigned long timestamp, float value, float tolerance);
 void buffer_clear(ReadingBuffer *buf);
 
 inline bool buffer_full(ReadingBuffer *buf) {

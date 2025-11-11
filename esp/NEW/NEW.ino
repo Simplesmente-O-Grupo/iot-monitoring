@@ -17,11 +17,11 @@ const int pressure_id = 4;
 const int temperature_id = 5;
 const int angle_id = 6;
 //wifi
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "GLaDOS";
+const char* password = "rosebud12";
 
 //MQTT
-const char* mqtt_server = "mqtt.mattthefreeman.xyz"; // Ex: "192.168.1.100" ou "broker.hivemq.com"
+const char* mqtt_server = "192.168.192.131"; // Ex: "192.168.1.100" ou "broker.hivemq.com"
 const int   mqtt_port = 1883;
 const char* station_id = "1"; // <stationid> do seu tópico
 
@@ -139,6 +139,7 @@ void publishMqttMessages(int sensor_id, int unit_id, ReadingBuffer *buf) {
   // Serializa o JSON para uma string
   String payload;
   serializeJson(doc, payload);
+  Serial.print(payload.c_str());
 
   // Publica a mensagem
   if (client.publish(topic.c_str(), payload.c_str())) {
@@ -237,6 +238,7 @@ void setup() {
 
   // Configura o cliente MQTT
   client.setServer(mqtt_server, mqtt_port);
+  client.setBufferSize(1024);
   client.setCallback(mqttCallback);
 
   // LM393
@@ -278,7 +280,7 @@ void loop() {
 
   manage_bmp280_temp(now);
   
-  manage_as5600(now);
+  //manage_as5600(now);
 }
 
 void manage_lm393(unsigned long now) {
@@ -304,7 +306,7 @@ void manage_lm393(unsigned long now) {
     //publishMqttMessage(2, 2, velocidade);
     
     // Adiciona leitura no buffer.
-    buffer_add(&lm393_buf, getTimestamp(), velocidade);
+    buffer_add(&lm393_buf, getTimestamp(), velocidade, 0.5);
     
     lastTime_lm393 = now;
   }
@@ -331,7 +333,7 @@ void manage_bht1750(unsigned long now) {
     //publishMqttMessage(3, 1, luz);
 
     // Adiciona no buffer
-    buffer_add(&bh1750_buf, getTimestamp(),  luz);
+    buffer_add(&bh1750_buf, getTimestamp(),  luz, 5);
 
     lastTime_bh1750 = now;
   }
@@ -359,7 +361,7 @@ void manage_dht11(unsigned long now) {
     
 
     // Adiciona no buffer
-    buffer_add(&dht11_buf, getTimestamp(), umidade);
+    buffer_add(&dht11_buf, getTimestamp(), umidade, 10);
     
     lastTime_dht11_hum = now;
   }
@@ -386,7 +388,7 @@ void manage_bmp280_press(unsigned long now) {
     //publishMqttMessage(4, 3, pressao);
 
     // Adiciona no buffer
-    buffer_add(&bmp280_pres_buf, getTimestamp(), pressao);
+    buffer_add(&bmp280_pres_buf, getTimestamp(), pressao, 10);
     
     lastTime_bmp280_press = now;
   }
@@ -413,7 +415,7 @@ void manage_bmp280_temp(unsigned long now) {
     //publishMqttMessage(4, 5, temperatura);
     
     // Adiciona no buffer
-    buffer_add(&bmp280_temp_buf, getTimestamp(), temperatura);
+    buffer_add(&bmp280_temp_buf, getTimestamp(), temperatura, 0.5);
 
     lastTime_bmp280_temp = now;
   }
@@ -435,7 +437,7 @@ void manage_as5600(unsigned long now) {
     Serial.print("Direcao do vento (angulo): ");
     Serial.println(angulo);
 
-    buffer_add(&as5600_buf, getTimestamp(), angulo);
+    buffer_add(&as5600_buf, getTimestamp(), angulo, 0);
 
     lastTime_as5600 = now;
   }
