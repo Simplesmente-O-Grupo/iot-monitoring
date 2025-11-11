@@ -94,22 +94,22 @@ function App() {
       
       {/*********  DADOS ATUAIS) *******/}
       <aside className="w-64 bg-gray-800 p-6 flex flex-col shadow-lg flex-shrink-0">
-        <h2 className="text-lg font-semibold text-white mb-2">DADOS ATUAIS</h2>
+        <h2 className="text-lg font-semibold text-white mb-2">Current Data</h2>
         <p className="text-sm text-gray-400 mb-6">Weather Station</p>
         
         <div className="space-y-4">
-          <StatCard title="Temperatura" value={`${currentTemp}°C`} />
-          <StatCard title="Umidade" value={`${currentHumidity}%`} />
-          <StatCard title="Vento" value={`${currentWind} km/h`} />
-          <StatCard title="Pressão" value={`${currentPressure} hPa`} />
+          <StatCard title="Temperature" value={`${currentTemp}°C`} />
+          <StatCard title="Humidity" value={`${currentHumidity}%`} />
+          <StatCard title="Wild Speed" value={`${currentWind} km/h`} />
+          <StatCard title="Pressure" value={`${currentPressure} hPa`} />
         </div>
       </aside>
       
       {/******* GRAFICOS *******/}
       <main className="flex-1 p-8 overflow-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Painel de Monitoramento</h1>
+        <h1 className="text-3xl font-bold text-white mb-8">Monitoring Dashboard</h1>
         
-        {loading && <div>Carregando gráficos...</div>}
+        {loading && <div>Loading Graphs...</div>}
         {error && <div className="text-red-500 mb-4">{error}</div>} 
         
         {!loading && (
@@ -118,7 +118,7 @@ function App() {
             {/**** Card 1: Temperatura ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
               <h2 className="text-xl font-semibold mb-4 text-white">
-                Temperatura
+                Temperature
               </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={tempData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
