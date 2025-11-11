@@ -69,7 +69,7 @@ services:
     build:
       context: ./frontend/
     ports:
-      - "127.0.0.1:6767:80"
+      - "127.0.0.1:6767:3000"
     depends_on:
       - api
 
