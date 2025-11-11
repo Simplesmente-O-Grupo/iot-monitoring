@@ -20,9 +20,9 @@ function App() {
   const [tempData, setTempData] = useState([]);
   const [pressureData, setPressureData] = useState([]);
   const [humidityData, setHumidityData] = useState([]);
-  const [uvData, setUvData] = useState([]);
-  const [windData, setWindData] = useState([]);
-  const [visibilityData, setVisibilityData] = useState([]);
+  const [luminosityData, setLuminosityData] = useState([]);
+  const [windData, setWindData] = useState([])
+  const [windDirectionData, setWindDirectionData] = useState([]);
  
   const [currentTemp, setCurrentTemp] = useState('--.-');
   const [currentHumidity, setCurrentHumidity] = useState('--');
@@ -48,12 +48,12 @@ function App() {
             }));
         };
  
-        setTempData(processReadings(1));      // ID 1 = Temperatura
-        setHumidityData(processReadings(2));  // ID 2 = Umidade
-        setPressureData(processReadings(3));  // ID 3 = Pressão
-        setUvData(processReadings(4));        // ID 4 = Índice UV
-        setWindData(processReadings(5));      // ID 5 = Vento
-        setVisibilityData(processReadings(6)); // ID 6 = Visibilidade
+        setTempData(processReadings(5));      // ID 5 = Temperatura
+        setHumidityData(processReadings(3));  // ID 3 = Umidade
+        setPressureData(processReadings(4));  // ID 4 = Pressão
+        setLuminosityData(processReadings(2));  // ID 2 = Luminosidade
+        setWindData(processReadings(1));      // ID 1 = Vento
+        setWindDirectionData(processReadings(6)); // ID 6 = Direção do vento
 
         setLoading(false);
       })
@@ -175,14 +175,14 @@ function App() {
 
             {/**** Card 3: Índice UV ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Índice UV</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Luminosidade</h2>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={uvData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                <LineChart data={luminosityData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
                   <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                  <Line type="monotone" dataKey="value" name="Índice UV" stroke="#8884d8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="value" name="Luminosidade" stroke="#8884d8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -201,11 +201,11 @@ function App() {
               </ResponsiveContainer>
             </div>
 
-            {/**** Card 5: Visibilidade ****/}
+            {/**** Card 5: Luminosidade ****/}
             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-4 text-white">Visibilidade</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Luminosidade</h2>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={visibilityData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                <LineChart data={luminosityData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
                   <XAxis dataKey="time_formatted" stroke="#9CA3AF" />
                   <YAxis stroke="#9CA3AF" />
