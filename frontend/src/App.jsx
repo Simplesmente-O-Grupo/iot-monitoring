@@ -67,7 +67,7 @@ function App() {
   useEffect(() => {
     if (mqttClientRef.current) return;
 
-    const client = new Paho.Client('localhost', MQTT_PORT, `dashboard_${new Date().getTime()}`);
+    const client = new Paho.Client('mqtt.mattthefreeman.xyz', MQTT_PORT, `dashboard_${new Date().getTime()}`);
     
     function onMessageArrived(message) {
       console.log("Mensagem MQTT recebida:", message.payloadString);
